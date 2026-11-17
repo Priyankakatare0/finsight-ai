@@ -1,4 +1,6 @@
 node_modules
- dist
-.env, uploads
+dist
+.env
+.env.local
+uploads
 .DS_Store

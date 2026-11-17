@@ -2,9 +2,16 @@ import mongoose, { type Types } from "mongoose";
 import { ConversationModel, type IConversationDocument } from "../models/Conversation.model";
 import { MessageModel, type IMessageDocument, type IMessageSource } from "../models/Message.model";
 import { DocumentModel } from "../models/Document.model";
-import { retrieveContext, type RetrievedChunk } from "../rag/retrieval";
+import {
+  retrieveContext,
+  type RetrievedChunk,
+  type RetrievalFilters,
+  detectMetadataFromQuery,
+  matchMetadataAgainstUserDocuments,
+} from "../rag/retrieval";
 import { buildAnswerPrompt, NOT_FOUND_MESSAGE, type ContextBlock } from "../rag/prompts/answer.v1";
 import { streamChat } from "../rag/generation/llm.provider";
+import { rewriteQueryForFollowUp } from "../rag/generation/queryRewriter";
 import { AppError } from "../errors/AppError";
 
 export const DEFAULT_REFUSAL_THRESHOLD = 0.5;
@@ -185,14 +192,55 @@ export class ChatService {
       return userMessage;
     }
 
+    // Step 11.1: Query rewriting for follow-ups
+    // Look up last 6 messages in the conversation prior to the current user message
+    let effectiveQuery = content;
+    try {
+      const priorMessages = await MessageModel.find({
+        conversationId: convObjectId,
+        _id: { $ne: userMessage._id },
+      })
+        .sort({ createdAt: -1 })
+        .limit(6)
+        .lean();
+
+      if (priorMessages.length > 0) {
+        // Chronological order (oldest to newest)
+        priorMessages.reverse();
+        effectiveQuery = await rewriteQueryForFollowUp(content, priorMessages);
+        if (effectiveQuery !== content) {
+          console.log(`[ChatService] Rewrote follow-up query: "${content}" -> "${effectiveQuery}"`);
+        }
+      }
+    } catch (rewriteErr: any) {
+      console.warn("[ChatService] Non-fatal error during follow-up query rewriting:", rewriteErr?.message || rewriteErr);
+    }
+
     const targetDocId = documentId || conversation.documentId;
+    let retrievalFilters: RetrievalFilters | undefined = targetDocId ? { documentId: targetDocId } : undefined;
+
+    // Step 11.2: Metadata filters
+    // Detect company and year in the query, match against own documents' fields, add to filter
+    try {
+      const detectedMeta = await detectMetadataFromQuery(effectiveQuery);
+      if (detectedMeta.company || detectedMeta.fiscalYear) {
+        retrievalFilters = await matchMetadataAgainstUserDocuments(
+          detectedMeta,
+          userObjectId,
+          retrievalFilters
+        );
+      }
+    } catch (metaErr: any) {
+      console.warn("[ChatService] Non-fatal error during metadata filtering:", metaErr?.message || metaErr);
+    }
+
     const retrieval = await retrieveContext({
       userId: userObjectId,
-      query: content,
+      query: effectiveQuery,
       numCandidates: 200,
       limit: 20,
       topK: 5,
-      filters: targetDocId ? { documentId: targetDocId } : undefined,
+      filters: retrievalFilters,
     });
 
     const topChunks = retrieval.contextChunks;

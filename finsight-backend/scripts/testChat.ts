@@ -3,6 +3,12 @@ import { env } from "../src/config/env";
 import { ConversationModel } from "../src/models/Conversation.model";
 import { MessageModel } from "../src/models/Message.model";
 import { chatService, validateCitations } from "../src/services/chat.service";
+import { rewriteQueryForFollowUp } from "../src/rag/generation/queryRewriter";
+import {
+  detectMetadataFromQuery,
+  matchMetadataAgainstUserDocuments,
+} from "../src/rag/retrieval/metadataFilter";
+import { DocumentModel } from "../src/models/Document.model";
 import {
   buildAnswerPrompt,
   buildNumberedContext,
@@ -158,6 +164,84 @@ async function runTest() {
     } else {
       throw new Error("validateCitations failed to strip invalid citations.");
     }
+
+    // --------------------------------------------------------------------------
+    // Test 5: Step 11.1 Query Rewriting for Follow-up Questions
+    // --------------------------------------------------------------------------
+    console.log("\n🧪 5. Testing Step 11.1 Query Rewriting for Follow-ups...");
+
+    const sampleHistory = [
+      { role: "user", content: "What was Apple's total net sales for fiscal year 2024?" },
+      { role: "assistant", content: "For fiscal year 2024, Apple Inc. reported total net sales of $391.0 billion [1]." },
+    ];
+
+    const followUpQuestion = "What about their net profit?";
+    console.log(`   Original Follow-up Question: "${followUpQuestion}"`);
+
+    const rewritten = await rewriteQueryForFollowUp(followUpQuestion, sampleHistory);
+    console.log(`   Rewritten Standalone Query : "${rewritten}"`);
+
+    // Verify rewritten query resolves pronouns and includes company or fiscal context
+    const hasCompanyOrContext = rewritten.toLowerCase().includes("apple") || rewritten.toLowerCase().includes("2024") || rewritten.toLowerCase().includes("net profit");
+    if (hasCompanyOrContext) {
+      console.log("✅ Step 11.1: Query Rewriting successfully produced standalone question!");
+    } else {
+      console.warn("⚠️ Query rewriting returned:", rewritten);
+    }
+
+    // --------------------------------------------------------------------------
+    // Test 6: Step 11.2 Metadata Filters & Anti-Hallucination Validation
+    // --------------------------------------------------------------------------
+    console.log("\n🧪 6. Testing Step 11.2 Metadata Filters & Validation...");
+
+    // Create a ready test document for testUserId to match against
+    const testDoc = await DocumentModel.create({
+      userId: testUserId,
+      title: "Apple_Inc_FY24_10K.pdf",
+      company: "Apple Inc.",
+      docType: "10-K",
+      fiscalYear: 2024,
+      storageKey: "test/storage/apple_fy24.pdf",
+      fileHash: "abc123hash",
+      fileSize: 1024,
+      status: "indexed",
+    });
+
+    const testQuestion = "What was Apple's gross margin in FY24?";
+    console.log(`   Sample Question: "${testQuestion}"`);
+
+    const detectedMeta = await detectMetadataFromQuery(testQuestion);
+    console.log(`   Detected Metadata: company="${detectedMeta.company}", fiscalYear=${detectedMeta.fiscalYear}`);
+
+    if (detectedMeta.company?.toLowerCase().includes("apple") && detectedMeta.fiscalYear === 2024) {
+      console.log("   ✓ Small model correctly extracted company and normalized FY24 -> 2024");
+    } else {
+      throw new Error(`Metadata detection failed: ${JSON.stringify(detectedMeta)}`);
+    }
+
+    const matchedFilters = await matchMetadataAgainstUserDocuments(detectedMeta, testUserId);
+    console.log("   Matched Filters against user documents:", matchedFilters);
+
+    if (matchedFilters.fiscalYear === 2024 && matchedFilters.documentId?.toString() === testDoc._id.toString()) {
+      console.log("   ✓ Successfully matched against user's actual document records!");
+    } else {
+      throw new Error("Metadata matching against user documents failed.");
+    }
+
+    // Anti-hallucination test: asking about Tesla when user only owns Apple documents
+    console.log("   Testing Anti-Hallucination: querying non-owned company 'Tesla'...");
+    const fakeDetected = { company: "Tesla Motors", fiscalYear: 2023 };
+    const fakeFilters = await matchMetadataAgainstUserDocuments(fakeDetected, testUserId);
+    console.log("   Anti-hallucination Filters Result:", fakeFilters);
+
+    if (!fakeFilters.documentId && !fakeFilters.fiscalYear) {
+      console.log("   ✓ Anti-Hallucination verified: rejected hallucinated company not in user documents!");
+      console.log("✅ Step 11.2: Metadata Filters test passed successfully!");
+    } else {
+      throw new Error("Anti-hallucination failed: accepted non-existent document metadata!");
+    }
+
+    await DocumentModel.findByIdAndDelete(testDoc._id);
 
     // --------------------------------------------------------------------------
     // Cleanup

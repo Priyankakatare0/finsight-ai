@@ -24,7 +24,7 @@ export interface RetrievedChunk {
 }
 
 export interface RetrievalFilters {
-  documentId?: string | Types.ObjectId | undefined;
+  documentId?: string | Types.ObjectId | (string | Types.ObjectId)[] | undefined;
   docType?: string | string[] | undefined;
   fiscalYear?: number | number[] | undefined;
   fiscalQuarter?: string | string[] | undefined;
@@ -106,11 +106,22 @@ export function buildVectorSearchFilter(
   ];
 
   if (filters?.documentId) {
-    const docObjectId =
-      typeof filters.documentId === "string"
-        ? new mongoose.Types.ObjectId(filters.documentId)
-        : filters.documentId;
-    conditions.push({ documentId: { $eq: docObjectId } });
+    if (Array.isArray(filters.documentId)) {
+      const docObjectIds = filters.documentId
+        .map((id) => (typeof id === "string" ? new mongoose.Types.ObjectId(id) : id))
+        .filter(Boolean);
+      if (docObjectIds.length === 1) {
+        conditions.push({ documentId: { $eq: docObjectIds[0] } });
+      } else if (docObjectIds.length > 1) {
+        conditions.push({ documentId: { $in: docObjectIds } });
+      }
+    } else {
+      const docObjectId =
+        typeof filters.documentId === "string"
+          ? new mongoose.Types.ObjectId(filters.documentId)
+          : filters.documentId;
+      conditions.push({ documentId: { $eq: docObjectId } });
+    }
   }
 
   if (filters?.docType) {

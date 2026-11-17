@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { env } from "../../config/env";
 import { useGemini } from "../ingestion/embedder";
 
-export const GEMINI_CHAT_MODEL = process.env.GEMINI_CHAT_MODEL || "gemini-2.0-flash";
+export const GEMINI_CHAT_MODEL = process.env.GEMINI_CHAT_MODEL || "gemini-3.1-flash-lite";
 export const OPENAI_CHAT_MODEL = process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini";
 
 export interface StreamChatOptions {
@@ -127,6 +127,62 @@ export async function streamChat(options: StreamChatOptions): Promise<StreamChat
   }
 
   return await streamOpenAIChat(options);
+}
+
+/**
+ * Executes a fast, non-streaming completion using the small model (Gemini 3.1 Flash-Lite or GPT-4o-mini).
+ * Used for query rewriting, metadata extraction, and classification.
+ */
+export async function generateSmallCompletion(
+  systemPrompt: string,
+  userPrompt: string,
+  temperature: number = 0.0,
+  timeoutMs: number = 10000
+): Promise<string> {
+  const timeoutPromise = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error(`generateSmallCompletion timed out after ${timeoutMs}ms`)), timeoutMs)
+  );
+
+  if (useGemini && env.GEMINI_API_KEY) {
+    try {
+      const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+      const apiCall = ai.models.generateContent({
+        model: GEMINI_CHAT_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: userPrompt }],
+          },
+        ],
+        config: {
+          systemInstruction: systemPrompt,
+          temperature,
+        },
+      });
+
+      const response = await Promise.race([apiCall, timeoutPromise]);
+      return response.text?.trim() || "";
+    } catch (geminiErr: any) {
+      if (!env.OPENAI_API_KEY) throw geminiErr;
+    }
+  }
+
+  if (env.OPENAI_API_KEY) {
+    const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    const apiCall = client.chat.completions.create({
+      model: OPENAI_CHAT_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature,
+    });
+
+    const response = await Promise.race([apiCall, timeoutPromise]);
+    return response.choices[0]?.message?.content?.trim() || "";
+  }
+
+  throw new Error("No LLM API key configured for completion.");
 }
 
 export default streamChat;

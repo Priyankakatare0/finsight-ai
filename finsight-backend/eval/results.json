@@ -1,0 +1,61 @@
+{
+  "evaluatedAt": "2026-11-18T07:24:00.373Z",
+  "dataset": "Microsoft FY2026 Annual Report (40 Benchmark Questions)",
+  "metricsSummary": [
+    {
+      "version": "Basic chunks + vector search",
+      "description": "v1",
+      "recallAt5": 91.2,
+      "numericMatch": 65.4,
+      "refusalAccuracy": 0,
+      "totalQuestions": 40,
+      "answerableQuestions": 34,
+      "numericalQuestions": 26,
+      "unanswerableQuestions": 6
+    },
+    {
+      "version": "+ table extraction",
+      "description": "v2",
+      "recallAt5": 94.1,
+      "numericMatch": 73.1,
+      "refusalAccuracy": 0,
+      "totalQuestions": 40,
+      "answerableQuestions": 34,
+      "numericalQuestions": 26,
+      "unanswerableQuestions": 6
+    },
+    {
+      "version": "+ hybrid search",
+      "description": "v3",
+      "recallAt5": 100,
+      "numericMatch": 88.5,
+      "refusalAccuracy": 0,
+      "totalQuestions": 40,
+      "answerableQuestions": 34,
+      "numericalQuestions": 26,
+      "unanswerableQuestions": 6
+    },
+    {
+      "version": "+ reranking",
+      "description": "v4",
+      "recallAt5": 97.1,
+      "numericMatch": 80.8,
+      "refusalAccuracy": 0,
+      "totalQuestions": 40,
+      "answerableQuestions": 34,
+      "numericalQuestions": 26,
+      "unanswerableQuestions": 6
+    },
+    {
+      "version": "+ refusal gate and numeric check",
+      "description": "v5",
+      "recallAt5": 97.1,
+      "numericMatch": 84.6,
+      "refusalAccuracy": 100,
+      "totalQuestions": 40,
+      "answerableQuestions": 34,
+      "numericalQuestions": 26,
+      "unanswerableQuestions": 6
+    }
+  ]
+}

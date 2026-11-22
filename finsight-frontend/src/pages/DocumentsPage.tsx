@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { documentApi } from "../services/documentApi";
 import type { DocumentItem } from "../types/document";
@@ -8,6 +9,7 @@ import { Button } from "../components/ui/button";
 import { Card } from "../components/ui/card";
 
 export const DocumentsPage: React.FC = () => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -237,6 +239,14 @@ export const DocumentsPage: React.FC = () => {
                     </td>
 
                     <td className="px-6 py-4 text-right space-x-2 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/chat?documentId=${doc._id}`)}
+                        className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 text-xs font-medium transition-colors"
+                        title="Chat with this document in FinSight AI"
+                      >
+                        <span>💬 Chat</span>
+                      </button>
                       <a
                         href={documentApi.getDocumentFileUrl(doc._id)}
                         target="_blank"

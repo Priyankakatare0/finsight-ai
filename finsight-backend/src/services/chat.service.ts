@@ -14,7 +14,7 @@ import { streamChat } from "../rag/generation/llm.provider";
 import { rewriteQueryForFollowUp } from "../rag/generation/queryRewriter";
 import { AppError } from "../errors/AppError";
 
-export const DEFAULT_REFUSAL_THRESHOLD = 0.5;
+export const DEFAULT_REFUSAL_THRESHOLD = 0.4;
 
 /**
  * Step 10.5: Validate citations on the backend
@@ -52,6 +52,7 @@ export interface SendMessageOptions {
   content: string;
   documentId?: string | Types.ObjectId | undefined;
   refusalThreshold?: number | undefined;
+  editMessageId?: string | undefined;
   handlers: StreamChatEventHandlers;
   signal?: AbortSignal | undefined;
 }
@@ -120,6 +121,28 @@ export class ChatService {
   }
 
   /**
+   * Updates conversation title and/or attached documentId.
+   */
+  async updateConversation(
+    conversationId: string | Types.ObjectId,
+    userId: string | Types.ObjectId,
+    updates: { title?: string | undefined; documentId?: string | null | undefined }
+  ): Promise<IConversationDocument> {
+    const conversation = await this.getConversationById(conversationId, userId);
+    if (updates.title !== undefined) {
+      conversation.title = updates.title.trim();
+    }
+    if (updates.documentId !== undefined) {
+      conversation.documentId = updates.documentId
+        ? new mongoose.Types.ObjectId(updates.documentId)
+        : undefined;
+    }
+    conversation.updatedAt = new Date();
+    await conversation.save();
+    return conversation;
+  }
+
+  /**
    * Deletes a conversation and all its messages.
    */
   async deleteConversation(
@@ -150,6 +173,7 @@ export class ChatService {
       content,
       documentId,
       refusalThreshold = DEFAULT_REFUSAL_THRESHOLD,
+      editMessageId,
       handlers,
       signal,
     } = options;
@@ -165,6 +189,30 @@ export class ChatService {
 
     if (!conversation) {
       throw new AppError("Conversation not found", 404, "NOT_FOUND");
+    }
+
+    // Step 0: If editing/rewriting a previous user prompt, prune that message and all subsequent messages
+    if (editMessageId) {
+      const editObjectId = mongoose.Types.ObjectId.isValid(editMessageId)
+        ? new mongoose.Types.ObjectId(editMessageId)
+        : null;
+      if (editObjectId) {
+        const targetMsg = await MessageModel.findOne({
+          _id: editObjectId,
+          conversationId: convObjectId,
+          role: "user",
+        });
+        if (targetMsg) {
+          // Delete all messages created at or after this message in this conversation
+          await MessageModel.deleteMany({
+            conversationId: convObjectId,
+            $or: [
+              { createdAt: { $gt: targetMsg.createdAt } },
+              { _id: targetMsg._id },
+            ],
+          });
+        }
+      }
     }
 
     // Step 1: Save user message
@@ -216,11 +264,36 @@ export class ChatService {
       console.warn("[ChatService] Non-fatal error during follow-up query rewriting:", rewriteErr?.message || rewriteErr);
     }
 
-    const targetDocId = documentId || conversation.documentId;
+    // Resolve target document: explicitly requested documentId > conversation-bound documentId > single user document fallback
+    let targetDocId = documentId || conversation.documentId;
+    if (documentId && (!conversation.documentId || conversation.documentId.toString() !== documentId.toString())) {
+      conversation.documentId = typeof documentId === "string" ? new mongoose.Types.ObjectId(documentId) : documentId;
+      await conversation.save();
+      targetDocId = conversation.documentId;
+    } else if (!targetDocId) {
+      try {
+        const userDocs = await DocumentModel.find({
+          userId: userObjectId,
+          status: { $in: ["indexed", "embedding", "chunking"] },
+        })
+          .select("_id")
+          .limit(2)
+          .lean();
+
+        if (userDocs.length === 1 && userDocs[0]?._id) {
+          targetDocId = userDocs[0]._id;
+          conversation.documentId = targetDocId;
+          await conversation.save();
+        }
+      } catch (err: any) {
+        console.warn("[ChatService] Non-fatal error during single user document auto-detection:", err?.message || err);
+      }
+    }
+
     let retrievalFilters: RetrievalFilters | undefined = targetDocId ? { documentId: targetDocId } : undefined;
 
     // Step 11.2: Metadata filters
-    // Detect company and year in the query, match against own documents' fields, add to filter
+    // Detect company and year in the query, match against own documents' fields, add to filter if no specific doc is bound
     try {
       const detectedMeta = await detectMetadataFromQuery(effectiveQuery);
       if (detectedMeta.company || detectedMeta.fiscalYear) {
@@ -246,10 +319,14 @@ export class ChatService {
     const topChunks = retrieval.contextChunks;
     const topScore = topChunks[0]?.score ?? 0;
 
-    // Step 3: Refusal Gate (easy version)
-    // If the best similarity score is below threshold, return not-found message and stop
-    if (topChunks.length === 0 || topScore < refusalThreshold) {
-      console.log(`[ChatService] Refusal Gate triggered: topScore=${topScore.toFixed(4)} < threshold=${refusalThreshold}`);
+    // Step 3: Refusal Gate
+    // If a specific document is targeted, allow semantic/indirect queries by using a slightly softer threshold (0.35)
+    const effectiveRefusalThreshold = targetDocId
+      ? Math.min(refusalThreshold, 0.35)
+      : refusalThreshold;
+
+    if (topChunks.length === 0 || topScore < effectiveRefusalThreshold) {
+      console.log(`[ChatService] Refusal Gate triggered: topScore=${topScore.toFixed(4)} < threshold=${effectiveRefusalThreshold}`);
 
       await handlers.onSources?.({ sources: [] });
       await handlers.onToken({ text: NOT_FOUND_MESSAGE });

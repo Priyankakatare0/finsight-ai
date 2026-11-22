@@ -19,17 +19,26 @@ export class DocumentController {
     const document = await documentService.uploadDocument(userId, req.file, metadata);
 
     // Queue document ingestion job for background processing
-    await ingestionQueue.add(
-      "ingest",
-      { documentId: document._id.toString(), userId },
-      {
-        attempts: 3,
-        backoff: {
-          type: "exponential",
-          delay: 5000,
-        },
-      }
-    );
+    try {
+      await ingestionQueue.add(
+        "ingest",
+        { documentId: document._id.toString(), userId },
+        {
+          attempts: 3,
+          backoff: {
+            type: "exponential",
+            delay: 5000,
+          },
+        }
+      );
+    } catch (queueErr: any) {
+      console.warn("⚠️ [DocumentController] Redis queue offline. Running ingestion directly in background fallback...", queueErr?.message);
+      import("../rag/ingestion/pipeline").then(({ runPipeline }) => {
+        runPipeline(document._id.toString()).catch((err) => {
+          console.error(`❌ Background direct ingestion failed for ${document._id}:`, err?.message);
+        });
+      });
+    }
 
     res.status(201).json({
       success: true,

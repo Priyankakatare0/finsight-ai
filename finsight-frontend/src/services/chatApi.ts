@@ -26,6 +26,17 @@ export const chatApi = {
     return data.data.conversation;
   },
 
+  async updateConversation(
+    id: string,
+    updates: { title?: string; documentId?: string | null }
+  ): Promise<Conversation> {
+    const { data } = await api.patch<ConversationSingleResponse>(
+      `/chat/conversations/${id}`,
+      updates
+    );
+    return data.data.conversation;
+  },
+
   async deleteConversation(id: string): Promise<void> {
     await api.delete(`/chat/conversations/${id}`);
   },

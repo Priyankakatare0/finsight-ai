@@ -30,11 +30,29 @@ export function useChatStream({ conversationId, onDone, onError }: UseChatStream
   }, []);
 
   const sendMessage = useCallback(
-    async (content: string, documentId?: string) => {
+    async (content: string, documentId?: string, editMessageId?: string) => {
       const trimmed = content.trim();
       if (!trimmed || !conversationId) return;
 
-      const accessToken = useAuthStore.getState().accessToken;
+      let accessToken = useAuthStore.getState().accessToken;
+      if (!accessToken) {
+        try {
+          const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: "POST",
+            credentials: "include",
+          });
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            accessToken = refreshData.data?.accessToken || null;
+            if (accessToken) {
+              useAuthStore.getState().setAccessToken(accessToken);
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
       if (!accessToken) {
         const err = new Error("Authentication token not found. Please log in.");
         setError(err.message);
@@ -49,7 +67,7 @@ export function useChatStream({ conversationId, onDone, onError }: UseChatStream
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
-      // Optimistically append user message
+      // Optimistically append or replace user message
       const userMessageId = `user-${Date.now()}`;
       const optimisticUserMsg: Message = {
         _id: userMessageId,
@@ -73,10 +91,18 @@ export function useChatStream({ conversationId, onDone, onError }: UseChatStream
         createdAt: new Date().toISOString(),
       };
 
-      setMessages((prev) => [...prev, optimisticUserMsg, placeholderAssistantMsg]);
+      if (editMessageId) {
+        setMessages((prev) => {
+          const targetIndex = prev.findIndex((m) => m._id === editMessageId);
+          const kept = targetIndex >= 0 ? prev.slice(0, targetIndex) : prev;
+          return [...kept, optimisticUserMsg, placeholderAssistantMsg];
+        });
+      } else {
+        setMessages((prev) => [...prev, optimisticUserMsg, placeholderAssistantMsg]);
+      }
 
       try {
-        const response = await fetch(
+        let response = await fetch(
           `${API_BASE_URL}/chat/conversations/${conversationId}/messages`,
           {
             method: "POST",
@@ -87,10 +113,47 @@ export function useChatStream({ conversationId, onDone, onError }: UseChatStream
             body: JSON.stringify({
               content: trimmed,
               documentId: documentId || undefined,
+              editMessageId: editMessageId || undefined,
             }),
             signal: abortController.signal,
           }
         );
+
+        // Auto-retry once on 401 with silent token refresh
+        if (response.status === 401) {
+          try {
+            const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+              method: "POST",
+              credentials: "include",
+            });
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              const newToken = refreshData.data?.accessToken;
+              if (newToken) {
+                accessToken = newToken;
+                useAuthStore.getState().setAccessToken(newToken);
+                response = await fetch(
+                  `${API_BASE_URL}/chat/conversations/${conversationId}/messages`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${newToken}`,
+                    },
+                    body: JSON.stringify({
+                      content: trimmed,
+                      documentId: documentId || undefined,
+                      editMessageId: editMessageId || undefined,
+                    }),
+                    signal: abortController.signal,
+                  }
+                );
+              }
+            }
+          } catch {
+            // refresh failed
+          }
+        }
 
         if (!response.ok) {
           let errorMsg = `Server responded with ${response.status}`;

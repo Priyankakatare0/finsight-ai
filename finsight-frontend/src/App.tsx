@@ -7,7 +7,7 @@ import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 import DocumentsPage from "./pages/DocumentsPage";
 import ChatPage from "./pages/ChatPage";
 
@@ -76,13 +76,16 @@ export const AppContent: React.FC = () => {
             }
           />
           <Route
-            path="/"
+            path="/profile"
             element={
               <ProtectedRoute>
-                <DashboardPage />
+                <ProfilePage />
               </ProtectedRoute>
             }
           />
+          {/* Legacy route alias */}
+          <Route path="/dashboard" element={<Navigate to="/profile" replace />} />
+          <Route path="/" element={<Navigate to="/documents" replace />} />
           <Route path="*" element={<Navigate to="/documents" replace />} />
         </Routes>
       </main>

@@ -2,7 +2,11 @@ import { Router } from "express";
 import { chatController } from "../controllers/chat.controller";
 import { authenticate } from "../middlewares/authenticate";
 import { validate } from "../middlewares/validate";
-import { createConversationSchema, sendMessageSchema } from "../validators/chat.schema";
+import {
+  createConversationSchema,
+  updateConversationSchema,
+  sendMessageSchema,
+} from "../validators/chat.schema";
 import { asyncHandler } from "../utils/asyncHandler";
 
 const router = Router();
@@ -15,6 +19,12 @@ router.post(
   "/conversations",
   validate(createConversationSchema),
   asyncHandler((req, res) => chatController.createConversation(req, res))
+);
+
+router.patch(
+  "/conversations/:id",
+  validate(updateConversationSchema),
+  asyncHandler((req, res) => chatController.updateConversation(req, res))
 );
 
 router.get(

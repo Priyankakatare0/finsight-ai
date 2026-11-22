@@ -1,0 +1,417 @@
+{
+  "metadata": {
+    "dataset_name": "Microsoft FY2026 Annual Report RAG Evaluation Dataset",
+    "source_document": "Microsoft_FY2026_Annual_Report",
+    "total_questions": 40,
+    "categories": {
+      "simple_factual": 12,
+      "table_based_numerical": 8,
+      "multi_year_comparison": 8,
+      "qualitative_contextual": 6,
+      "unanswerable": 6
+    },
+    "page_mapping_description": "24 canonical document sections representing paginated annual report layout (Pages 1 to 24)."
+  },
+  "questions": [
+    {
+      "id": 1,
+      "category": "simple_factual",
+      "question": "Who served as Microsoft's Chairman and Chief Executive Officer in fiscal year 2026?",
+      "groundTruth": "Satya Nadella served as Chairman and Chief Executive Officer.",
+      "expectedNumbers": [],
+      "expectedPages": [1, 24],
+      "sectionReference": "Executive Officers / Letter to Shareholders",
+      "shouldRefuse": false
+    },
+    {
+      "id": 2,
+      "category": "simple_factual",
+      "question": "In what year was Microsoft founded?",
+      "groundTruth": "Microsoft was founded in 1975.",
+      "expectedNumbers": [1975],
+      "expectedPages": [3],
+      "sectionReference": "Business - General",
+      "shouldRefuse": false
+    },
+    {
+      "id": 3,
+      "category": "simple_factual",
+      "question": "How many full-time employees did Microsoft employ globally as of June 30, 2026?",
+      "groundTruth": "As of June 30, 2026, Microsoft employed approximately 223,000 people on a full-time basis (121,000 in the U.S. and 102,000 internationally).",
+      "expectedNumbers": [223000, 121000, 102000],
+      "expectedPages": [4],
+      "sectionReference": "Human Capital Resources",
+      "shouldRefuse": false
+    },
+    {
+      "id": 4,
+      "category": "simple_factual",
+      "question": "How many registered holders of record of Microsoft common stock were there as of July 23, 2026?",
+      "groundTruth": "There were 74,199 registered holders of record of Microsoft common stock.",
+      "expectedNumbers": [74199],
+      "expectedPages": [2],
+      "sectionReference": "Market and Stockholders",
+      "shouldRefuse": false
+    },
+    {
+      "id": 5,
+      "category": "simple_factual",
+      "question": "Which independent accounting firm served as Microsoft's auditor for fiscal year 2026, and in what year did its service begin?",
+      "groundTruth": "Deloitte & Touche LLP served as Microsoft's independent registered public accounting firm, having served as the company's auditor since 1983.",
+      "expectedNumbers": [1983],
+      "expectedPages": [23],
+      "sectionReference": "Report of Independent Registered Public Accounting Firm",
+      "shouldRefuse": false
+    },
+    {
+      "id": 6,
+      "category": "simple_factual",
+      "question": "On what date was the acquisition of Activision Blizzard, Inc. completed, and what was the total purchase price?",
+      "groundTruth": "The acquisition was completed on October 13, 2023, for a total purchase price of $75.4 billion ($75,408 million).",
+      "expectedNumbers": [75.4, 75408],
+      "expectedPages": [16],
+      "sectionReference": "Note 7 — Business Combinations",
+      "shouldRefuse": false
+    },
+    {
+      "id": 7,
+      "category": "simple_factual",
+      "question": "How many paid seats did Microsoft 365 Copilot reach in fiscal year 2026?",
+      "groundTruth": "Microsoft 365 Copilot reached over 30 million paid seats.",
+      "expectedNumbers": [30],
+      "expectedPages": [1],
+      "sectionReference": "Letter to Shareholders - Building the Frontier Ecosystem",
+      "shouldRefuse": false
+    },
+    {
+      "id": 8,
+      "category": "simple_factual",
+      "question": "How many users did GitHub Copilot have according to the fiscal year 2026 report?",
+      "groundTruth": "GitHub Copilot had 50 million users.",
+      "expectedNumbers": [50],
+      "expectedPages": [1],
+      "sectionReference": "Letter to Shareholders - Agents and Infra",
+      "shouldRefuse": false
+    },
+    {
+      "id": 9,
+      "category": "simple_factual",
+      "question": "What are the names of Microsoft's three reportable operating segments?",
+      "groundTruth": "The three reportable operating segments are Productivity and Business Processes, Intelligent Cloud, and More Personal Computing.",
+      "expectedNumbers": [],
+      "expectedPages": [3, 5, 22],
+      "sectionReference": "Operating Segments / Note 18 — Segment Information and Geographic Data",
+      "shouldRefuse": false
+    },
+    {
+      "id": 10,
+      "category": "simple_factual",
+      "question": "What remaining share repurchase authorization remained under the September 16, 2024 share repurchase program as of June 30, 2026?",
+      "groundTruth": "$40.6 billion remained of the $60.0 billion share repurchase program.",
+      "expectedNumbers": [40.6, 60.0],
+      "expectedPages": [2, 21],
+      "sectionReference": "Note 15 — Stockholders' Equity / Share Repurchases",
+      "shouldRefuse": false
+    },
+    {
+      "id": 11,
+      "category": "simple_factual",
+      "question": "On what date each year does Microsoft conduct its annual goodwill impairment test?",
+      "groundTruth": "Goodwill is tested for impairment annually on May 1 at the reporting unit level.",
+      "expectedNumbers": [],
+      "expectedPages": [7, 17],
+      "sectionReference": "Note 8 — Goodwill / Critical Accounting Estimates",
+      "shouldRefuse": false
+    },
+    {
+      "id": 12,
+      "category": "simple_factual",
+      "question": "What was Microsoft's long-term unsecured debt credit rating as of June 30, 2026?",
+      "groundTruth": "Microsoft's long-term unsecured debt rating was AAA.",
+      "expectedNumbers": [],
+      "expectedPages": [15],
+      "sectionReference": "Note 5 — Derivatives (Credit-Risk-Related Contingent Features)",
+      "shouldRefuse": false
+    },
+    {
+      "id": 13,
+      "category": "table_based_numerical",
+      "question": "According to the consolidated Income Statements, what were Microsoft's total revenue, total cost of revenue, and gross margin for the year ended June 30, 2026 (in millions)?",
+      "groundTruth": "For fiscal year 2026, total revenue was $331,839 million, total cost of revenue was $106,374 million, and gross margin was $225,465 million.",
+      "expectedNumbers": [331839, 106374, 225465],
+      "expectedPages": [8],
+      "sectionReference": "Income Statements",
+      "shouldRefuse": false
+    },
+    {
+      "id": 14,
+      "category": "table_based_numerical",
+      "question": "According to Note 18 (Segment Information and Geographic Data), what was the operating income recorded for each of Microsoft's three reporting segments in fiscal year 2026 (in millions)?",
+      "groundTruth": "Productivity and Business Processes operating income was $83,879 million; Intelligent Cloud operating income was $56,972 million; and More Personal Computing operating income was $14,386 million.",
+      "expectedNumbers": [83879, 56972, 14386],
+      "expectedPages": [5, 22],
+      "sectionReference": "Note 18 — Segment Information and Geographic Data",
+      "shouldRefuse": false
+    },
+    {
+      "id": 15,
+      "category": "table_based_numerical",
+      "question": "Based on the consolidated Balance Sheets, what were the total cash, cash equivalents, and short-term investments, and total assets as of June 30, 2026 (in millions)?",
+      "groundTruth": "Total cash, cash equivalents, and short-term investments were $76,843 million (comprising $20,935 million in cash and cash equivalents and $55,908 million in short-term investments), and total assets were $758,376 million.",
+      "expectedNumbers": [76843, 20935, 55908, 758376],
+      "expectedPages": [9],
+      "sectionReference": "Balance Sheets",
+      "shouldRefuse": false
+    },
+    {
+      "id": 16,
+      "category": "table_based_numerical",
+      "question": "According to Note 10 (Debt), what was the total face value of long-term debt and the current portion of long-term debt as of June 30, 2026 (in millions)?",
+      "groundTruth": "Total face value was $46,136 million, and the current portion of long-term debt was $9,227 million (with non-current long-term debt recorded at $31,067 million).",
+      "expectedNumbers": [46136, 9227, 31067],
+      "expectedPages": [9, 18],
+      "sectionReference": "Note 10 — Debt / Balance Sheets",
+      "shouldRefuse": false
+    },
+    {
+      "id": 17,
+      "category": "table_based_numerical",
+      "question": "According to Note 6 (Property and Equipment), what were the gross asset carrying costs for 'Servers, network equipment, and software' and 'Buildings and improvements' as of June 30, 2026 (in millions)?",
+      "groundTruth": "Servers, network equipment, and software was $215,874 million, and Buildings and improvements was $182,749 million.",
+      "expectedNumbers": [215874, 182749],
+      "expectedPages": [16],
+      "sectionReference": "Note 6 — Property and Equipment",
+      "shouldRefuse": false
+    },
+    {
+      "id": 18,
+      "category": "table_based_numerical",
+      "question": "Based on Note 18 (Revenue Classified by Significant Product and Service Offerings), what revenues were generated by Server products and cloud services, Microsoft 365 Commercial, and LinkedIn in fiscal year 2026 (in millions)?",
+      "groundTruth": "Server products and cloud services generated $129,425 million; Microsoft 365 Commercial products and cloud services generated $101,997 million; and LinkedIn generated $19,817 million.",
+      "expectedNumbers": [129425, 101997, 19817],
+      "expectedPages": [22],
+      "sectionReference": "Note 18 — Segment Information and Geographic Data",
+      "shouldRefuse": false
+    },
+    {
+      "id": 19,
+      "category": "table_based_numerical",
+      "question": "According to the Effective Tax Rate reconciliation table in Note 11, what were the dollar and percentage impacts of Foreign tax credits on Microsoft's effective tax rate in fiscal year 2026?",
+      "groundTruth": "Foreign tax credits reduced taxes by $9,151 million, representing an impact of (5.5)% on the effective tax rate.",
+      "expectedNumbers": [9151, 5.5],
+      "expectedPages": [19],
+      "sectionReference": "Note 11 — Income Taxes",
+      "shouldRefuse": false
+    },
+    {
+      "id": 20,
+      "category": "table_based_numerical",
+      "question": "According to the unearned revenue recognition schedule in MD&A, what amount of unearned revenue is expected to be recognized in the three months ending September 30, 2026, and what was total unearned revenue as of June 30, 2026 (in millions)?",
+      "groundTruth": "Expected recognition for the three months ending September 30, 2026 was $28,589 million, and total unearned revenue was $75,712 million.",
+      "expectedNumbers": [28589, 75712],
+      "expectedPages": [7, 20],
+      "sectionReference": "MD&A - Unearned Revenue / Note 12 — Unearned Revenue",
+      "shouldRefuse": false
+    },
+    {
+      "id": 21,
+      "category": "multi_year_comparison",
+      "question": "How did Microsoft's total revenue compare across fiscal years 2024, 2025, and 2026 (in millions)?",
+      "groundTruth": "Total revenue was $245,122 million in FY24, $281,724 million in FY25, and $331,839 million in FY26, representing an 18% growth from FY25 to FY26.",
+      "expectedNumbers": [245122, 281724, 331839, 18],
+      "expectedPages": [5, 8],
+      "sectionReference": "Income Statements / Summary Results of Operations",
+      "shouldRefuse": false
+    },
+    {
+      "id": 22,
+      "category": "multi_year_comparison",
+      "question": "How did Microsoft's diluted EPS change between fiscal year 2025 and fiscal year 2026 on both a GAAP and non-GAAP adjusted basis?",
+      "groundTruth": "GAAP diluted EPS increased 32% from $13.64 in FY25 to $17.95 in FY26. Adjusted diluted EPS (non-GAAP) increased 22% from $14.13 in FY25 to $17.28 in FY26.",
+      "expectedNumbers": [13.64, 17.95, 32, 14.13, 17.28, 22],
+      "expectedPages": [5, 6, 8],
+      "sectionReference": "Summary Results of Operations / Non-GAAP Financial Measures",
+      "shouldRefuse": false
+    },
+    {
+      "id": 23,
+      "category": "multi_year_comparison",
+      "question": "How did net cash from operations compare between fiscal year 2025 and fiscal year 2026 (in millions)?",
+      "groundTruth": "Net cash from operations increased by $46,773 million (or approximately $46.8 billion), from $136,162 million in FY25 to $182,935 million in FY26.",
+      "expectedNumbers": [136162, 182935, 46773],
+      "expectedPages": [7, 10],
+      "sectionReference": "Cash Flows Statements / MD&A - Cash Flows",
+      "shouldRefuse": false
+    },
+    {
+      "id": 24,
+      "category": "multi_year_comparison",
+      "question": "Compare Microsoft's capital additions to property and equipment in the Cash Flows Statements across fiscal years 2024, 2025, and 2026 (in millions).",
+      "groundTruth": "Additions to property and equipment were $44,477 million in FY24, $64,551 million in FY25, and $115,948 million in FY26 (an increase of $51,397 million or 80% from FY25 to FY26).",
+      "expectedNumbers": [44477, 64551, 115948, 51397],
+      "expectedPages": [7, 10],
+      "sectionReference": "Cash Flows Statements / MD&A - Cash Flows",
+      "shouldRefuse": false
+    },
+    {
+      "id": 25,
+      "category": "multi_year_comparison",
+      "question": "How did Microsoft Cloud revenue change across fiscal years 2024, 2025, and 2026?",
+      "groundTruth": "Microsoft Cloud revenue was $137.7 billion in FY24, $168.9 billion in FY25, and $214.4 billion in FY26 (growing 27% in FY26).",
+      "expectedNumbers": [137.7, 168.9, 214.4, 27],
+      "expectedPages": [1, 5, 22],
+      "sectionReference": "Note 18 — Segment Information and Geographic Data / Letter to Shareholders",
+      "shouldRefuse": false
+    },
+    {
+      "id": 26,
+      "category": "multi_year_comparison",
+      "question": "How did Microsoft's effective tax rate evolve across fiscal years 2024, 2025, and 2026?",
+      "groundTruth": "The effective tax rate was 18.2% (or 18%) in FY24, 17.6% (or 18%) in FY25, and 19.4% (or 19%) in FY26.",
+      "expectedNumbers": [18.2, 17.6, 19.4],
+      "expectedPages": [6, 19],
+      "sectionReference": "Note 11 — Income Taxes / MD&A - Income Taxes",
+      "shouldRefuse": false
+    },
+    {
+      "id": 27,
+      "category": "multi_year_comparison",
+      "question": "What was the progression of cash dividends declared per common share from fiscal year 2024 through fiscal year 2026?",
+      "groundTruth": "Cash dividends declared per common share were $3.00 in FY24, $3.32 in FY25, and $3.64 in FY26.",
+      "expectedNumbers": [3.00, 3.32, 3.64],
+      "expectedPages": [2, 11, 21],
+      "sectionReference": "Stockholders' Equity Statements / Note 15 — Stockholders' Equity",
+      "shouldRefuse": false
+    },
+    {
+      "id": 28,
+      "category": "multi_year_comparison",
+      "question": "Compare research and development (R&D) expenses and their percentage of revenue between fiscal year 2025 and fiscal year 2026 (in millions).",
+      "groundTruth": "R&D expenses increased 9% from $32,488 million (12% of revenue) in FY25 to $35,562 million (11% of revenue) in FY26.",
+      "expectedNumbers": [32488, 12, 35562, 11, 9],
+      "expectedPages": [6],
+      "sectionReference": "MD&A - Operating Expenses (Research and Development)",
+      "shouldRefuse": false
+    },
+    {
+      "id": 29,
+      "category": "qualitative_contextual",
+      "question": "Why did Microsoft Cloud gross margin percentage decrease to 66% in fiscal year 2026?",
+      "groundTruth": "The decrease to 66% was driven by continued investments in AI infrastructure and growing AI product usage, offset in part by efficiency gains in Azure and Microsoft 365 Commercial cloud.",
+      "expectedNumbers": [66],
+      "expectedPages": [5],
+      "sectionReference": "MD&A - Summary Results of Operations",
+      "shouldRefuse": false
+    },
+    {
+      "id": 30,
+      "category": "qualitative_contextual",
+      "question": "What is the background and status of Microsoft's unresolved IRS audit concerning tax years 2004 to 2013?",
+      "groundTruth": "On September 26, 2023, Microsoft received Notices of Proposed Adjustment (NOPAs) from the IRS primarily relating to intercompany transfer pricing, seeking an additional tax payment of $28.9 billion plus penalties and interest. Microsoft disagrees with the proposed adjustments, believes its allowances for contingencies are adequate, and is contesting the NOPAs through administrative appeals and judicial proceedings if necessary.",
+      "expectedNumbers": [28.9],
+      "expectedPages": [6, 19, 23],
+      "sectionReference": "Note 11 — Income Taxes / Critical Audit Matters",
+      "shouldRefuse": false
+    },
+    {
+      "id": 31,
+      "category": "qualitative_contextual",
+      "question": "Why did Microsoft discontinue reporting 'Microsoft 365 Consumer subscribers' as a business metric in fiscal year 2026?",
+      "groundTruth": "In the first quarter of fiscal year 2026, Microsoft made updates to its metrics to align with how management monitors and manages certain businesses, resulting in the removal of Microsoft 365 Consumer subscribers as a metric.",
+      "expectedNumbers": [],
+      "expectedPages": [5],
+      "sectionReference": "MD&A - Metrics",
+      "shouldRefuse": false
+    },
+    {
+      "id": 32,
+      "category": "qualitative_contextual",
+      "question": "What architectural design in Microsoft's AI systems optimizes the 'cost-to-outcome' frontier?",
+      "groundTruth": "Microsoft utilizes a multimodel system where the execution harness—encompassing context, memory, and action space—is separate from the model. This makes models interchangeable and enables using the optimal model for each task to lower token costs per outcome while improving resilience.",
+      "expectedNumbers": [],
+      "expectedPages": [1],
+      "sectionReference": "Letter to Shareholders - Building the Frontier Ecosystem (Agents and Infra)",
+      "shouldRefuse": false
+    },
+    {
+      "id": 33,
+      "category": "qualitative_contextual",
+      "question": "How does Microsoft account for revenue when a cloud offering combines desktop applications with cloud services (such as Office 365)?",
+      "groundTruth": "When desktop applications and cloud services depend on a significant level of integration, interdependency, and interrelation such that the individual components are not distinct, they are accounted for together as a single performance obligation, and revenue is recognized ratably over the period in which cloud services are provided.",
+      "expectedNumbers": [],
+      "expectedPages": [7, 12],
+      "sectionReference": "Note 1 — Accounting Policies (Revenue Recognition)",
+      "shouldRefuse": false
+    },
+    {
+      "id": 34,
+      "category": "qualitative_contextual",
+      "question": "What transaction primarily caused the net gains from investments in OpenAI recognized by Microsoft in fiscal year 2026?",
+      "groundTruth": "The net gains primarily related to a dilution gain resulting from the OpenAI Recapitalization after OpenAI formed a public benefit corporation in October 2025, which reduced Microsoft's proportionate ownership interest.",
+      "expectedNumbers": [],
+      "expectedPages": [6, 12, 13],
+      "sectionReference": "Note 1 — Accounting Policies / Note 3 — Other Income (Expense), Net",
+      "shouldRefuse": false
+    },
+    {
+      "id": 35,
+      "category": "unanswerable",
+      "question": "What were Microsoft's standalone fourth-quarter revenue and net income figures for fiscal year 2026?",
+      "groundTruth": "The report does not provide standalone fourth-quarter financial statements or separate Q4 revenue and net income totals; it only provides full-year consolidated figures and select quarterly tables for share repurchases and dividends.",
+      "expectedNumbers": [],
+      "expectedPages": [],
+      "sectionReference": "N/A (Answer not present in report)",
+      "shouldRefuse": true
+    },
+    {
+      "id": 36,
+      "category": "unanswerable",
+      "question": "What is Microsoft's official management revenue guidance and operating margin forecast for the full fiscal year 2027?",
+      "groundTruth": "The report does not contain quantitative revenue targets, financial forecasts, or operating margin guidance for fiscal year 2027.",
+      "expectedNumbers": [],
+      "expectedPages": [],
+      "sectionReference": "N/A (Answer not present in report)",
+      "shouldRefuse": true
+    },
+    {
+      "id": 37,
+      "category": "unanswerable",
+      "question": "How many total subscribers did Xbox Game Pass have as of June 30, 2026?",
+      "groundTruth": "The report mentions over 1 billion players across Xbox and growth in Xbox Game Pass, but it does not disclose the total subscriber count for Xbox Game Pass.",
+      "expectedNumbers": [],
+      "expectedPages": [],
+      "sectionReference": "N/A (Answer not present in report)",
+      "shouldRefuse": true
+    },
+    {
+      "id": 38,
+      "category": "unanswerable",
+      "question": "What was the total purchase price paid by Microsoft to acquire Nuance Communications?",
+      "groundTruth": "The report only mentions that Nuance Healthcare was renamed to Health and Life Sciences cloud services; it does not disclose the acquisition consideration or financial details for Nuance Communications.",
+      "expectedNumbers": [],
+      "expectedPages": [],
+      "sectionReference": "N/A (Answer not present in report)",
+      "shouldRefuse": true
+    },
+    {
+      "id": 39,
+      "category": "unanswerable",
+      "question": "What were the base salary and annual cash incentive paid to CEO Satya Nadella for fiscal year 2026?",
+      "groundTruth": "The report names Satya Nadella as Chairman and CEO, but individual executive cash compensation breakdowns (base salary, bonus) are not disclosed in this report.",
+      "expectedNumbers": [],
+      "expectedPages": [],
+      "sectionReference": "N/A (Answer not present in report)",
+      "shouldRefuse": true
+    },
+    {
+      "id": 40,
+      "category": "unanswerable",
+      "question": "What was Microsoft Azure's global cloud market share percentage compared directly to Amazon Web Services and Google Cloud in 2026?",
+      "groundTruth": "The report discusses Azure's growth and competitive landscape generally, but it contains no external market share percentages or direct competitor market share metrics.",
+      "expectedNumbers": [],
+      "expectedPages": [],
+      "sectionReference": "N/A (Answer not present in report)",
+      "shouldRefuse": true
+    }
+  ]
+}

@@ -105,6 +105,12 @@ export async function matchMetadataAgainstUserDocuments(
     ...existingFilters,
   };
 
+  // If user already explicitly bound a specific documentId, preserve it and do not restrict
+  // or conflict with other document filters so chunks of the targeted document remain accessible.
+  if (existingFilters?.documentId) {
+    return filters;
+  }
+
   // If both company and year are null, return existing filters untouched
   if (!detected.company && !detected.fiscalYear) {
     return filters;

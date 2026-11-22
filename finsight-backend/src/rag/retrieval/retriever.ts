@@ -243,7 +243,43 @@ export async function retrieveContext(
   ];
 
   try {
-    const rawResults = await ChunkModel.aggregate<RetrievedChunk>(pipeline);
+    let rawResults = await ChunkModel.aggregate<RetrievedChunk>(pipeline);
+
+    // Soft fallback: if strict metadata filter (e.g. fiscalYear, docType) returned 0 results,
+    // retry with user & documentId isolation to avoid false negative refusals.
+    if (
+      rawResults.length === 0 &&
+      filters &&
+      (filters.fiscalYear !== undefined || filters.docType !== undefined || filters.fiscalQuarter !== undefined)
+    ) {
+      const relaxedFilter = buildVectorSearchFilter(userId, { documentId: filters.documentId });
+      const relaxedPipeline = [
+        {
+          $vectorSearch: {
+            index: indexName,
+            path: "embedding",
+            queryVector,
+            numCandidates,
+            limit,
+            filter: relaxedFilter,
+          },
+        },
+        {
+          $project: {
+            embedding: 0,
+            score: { $meta: "vectorSearchScore" },
+          },
+        },
+      ];
+      try {
+        const relaxedResults = await ChunkModel.aggregate<RetrievedChunk>(relaxedPipeline);
+        if (relaxedResults.length > 0) {
+          rawResults = relaxedResults;
+        }
+      } catch {
+        // Ignore relaxed retry failure
+      }
+    }
 
     // 4. Optional score thresholding
     let candidates = rawResults;

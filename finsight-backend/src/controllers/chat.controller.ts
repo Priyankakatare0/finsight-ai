@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { chatService } from "../services/chat.service";
 import { AppError } from "../errors/AppError";
-import type { CreateConversationInput, SendMessageInput } from "../validators/chat.schema";
+import type { CreateConversationInput, UpdateConversationInput, SendMessageInput } from "../validators/chat.schema";
 
 export class ChatController {
   /**
@@ -17,6 +17,25 @@ export class ChatController {
     const conversation = await chatService.createConversation(userId, title, documentId);
 
     res.status(201).json({
+      success: true,
+      data: { conversation },
+    });
+  }
+
+  /**
+   * PATCH /api/chat/conversations/:id
+   */
+  async updateConversation(req: Request, res: Response): Promise<void> {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new AppError("Unauthorized", 401, "UNAUTHORIZED");
+    }
+
+    const conversationId = req.params.id as string;
+    const updates = req.body as UpdateConversationInput;
+    const conversation = await chatService.updateConversation(conversationId, userId, updates);
+
+    res.status(200).json({
       success: true,
       data: { conversation },
     });
@@ -105,7 +124,7 @@ export class ChatController {
     }
 
     const conversationId = req.params.id as string;
-    const { content, documentId, refusalThreshold } = req.body as SendMessageInput;
+    const { content, documentId, refusalThreshold, editMessageId } = req.body as SendMessageInput;
 
     if (!content || content.trim().length === 0) {
       throw new AppError("Message content cannot be empty", 400, "BAD_REQUEST");
@@ -137,6 +156,7 @@ export class ChatController {
         content,
         documentId,
         refusalThreshold,
+        editMessageId,
         signal: abortController.signal,
         handlers: {
           onStatus: (status) => {

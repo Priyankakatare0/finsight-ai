@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { User, Sparkles, Loader2 } from "lucide-react";
+import { User, Sparkles, Loader2, Pencil } from "lucide-react";
 import type { Message, MessageSource } from "../../types/chat";
 import SourcesList from "./SourcesList";
 
@@ -10,6 +10,8 @@ interface MessageItemProps {
   isLatestStreaming?: boolean;
   statusStage?: "retrieving" | "generating" | null;
   onSelectCitation?: (source: MessageSource) => void;
+  onEditSubmit?: (messageId: string, newContent: string) => void;
+  isStreaming?: boolean;
 }
 
 /**
@@ -70,13 +72,112 @@ export const MessageItem: React.FC<MessageItemProps> = ({
   isLatestStreaming = false,
   statusStage = null,
   onSelectCitation,
+  onEditSubmit,
+  isStreaming = false,
 }) => {
   const isUser = message.role === "user";
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState(message.content);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    setEditText(message.content);
+  }, [message.content]);
+
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.focus();
+      const len = textareaRef.current.value.length;
+      textareaRef.current.setSelectionRange(len, len);
+    }
+  }, [isEditing]);
+
+  const handleSave = () => {
+    const trimmed = editText.trim();
+    if (!trimmed) return;
+    setIsEditing(false);
+    onEditSubmit?.(message._id, trimmed);
+  };
 
   if (isUser) {
+    if (isEditing) {
+      return (
+        <div className="flex justify-end mb-6 w-full animate-fadeIn">
+          <div className="flex items-start max-w-[90%] md:max-w-[80%] w-full justify-end space-x-3">
+            <div className="w-full bg-slate-900 border border-blue-500/50 rounded-2xl p-3.5 shadow-xl shadow-blue-950/40 ring-1 ring-blue-500/30">
+              <textarea
+                ref={textareaRef}
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setIsEditing(false);
+                    setEditText(message.content);
+                  } else if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSave();
+                  }
+                }}
+                rows={Math.min(6, Math.max(2, editText.split("\n").length))}
+                className="w-full bg-slate-950 text-slate-100 text-sm rounded-xl p-3 border border-slate-700/80 focus:border-blue-500 focus:outline-none resize-none font-sans leading-relaxed"
+                placeholder="Edit your prompt..."
+                disabled={isStreaming}
+              />
+              <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-800 text-xs">
+                <span className="text-[11px] text-slate-500 hidden sm:inline">
+                  Press <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-400 font-mono">Enter</kbd> to save, <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-400 font-mono">Shift+Enter</kbd> for new line, <kbd className="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 text-[10px] text-slate-400 font-mono">Esc</kbd> to cancel
+                </span>
+                <div className="flex items-center space-x-2 ml-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditText(message.content);
+                    }}
+                    className="px-3 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={!editText.trim() || isStreaming}
+                    className="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium flex items-center space-x-1.5 transition-all shadow-md shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    <span>Save & Submit</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center shrink-0 text-slate-300">
+              <User className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
-      <div className="flex justify-end mb-6">
-        <div className="flex items-start max-w-[85%] md:max-w-[75%] space-x-3">
+      <div className="flex justify-end mb-6 group">
+        <div className="flex items-start max-w-[85%] md:max-w-[75%] space-x-2">
+          {/* Action button to edit prompt on hover */}
+          {onEditSubmit && !isStreaming && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center self-center pr-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditText(message.content);
+                  setIsEditing(true);
+                }}
+                title="Edit prompt"
+                aria-label="Edit prompt"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent hover:border-slate-700 transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
           <div className="bg-blue-600 text-white rounded-2xl rounded-tr-sm px-4 py-3 shadow-md shadow-blue-900/20 text-sm leading-relaxed whitespace-pre-wrap">
             {message.content}
           </div>

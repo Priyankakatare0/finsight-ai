@@ -38,7 +38,7 @@ export const RegisterPage: React.FC = () => {
         password: values.password,
       });
       setAuth(data.user, data.accessToken);
-      navigate("/", { replace: true });
+      navigate("/documents", { replace: true });
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
         const message =

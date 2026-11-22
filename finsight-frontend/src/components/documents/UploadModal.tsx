@@ -1,13 +1,15 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { documentApi } from "../../services/documentApi";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import type { DocumentItem } from "../../types/document";
 import axios from "axios";
 
 interface UploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUploadSuccess: () => void;
+  onUploadSuccess?: (doc?: DocumentItem) => void;
+  initialFile?: File | null;
 }
 
 const MAX_SIZE_MB = 25;
@@ -17,6 +19,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   isOpen,
   onClose,
   onUploadSuccess,
+  initialFile,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -30,6 +33,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && initialFile) {
+      handleFileSelection(initialFile);
+    }
+  }, [isOpen, initialFile]);
 
   if (!isOpen) return null;
 
@@ -50,8 +59,16 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     }
 
     setFile(selectedFile);
+    const cleanBaseName = selectedFile.name.replace(/\.pdf$/i, "").trim();
     if (!title) {
-      setTitle(selectedFile.name.replace(/\.pdf$/i, ""));
+      setTitle(cleanBaseName);
+    }
+    if (!company) {
+      // Auto-suggest company from filename, e.g. "Apple_FY24_10K" -> "Apple"
+      const parts = cleanBaseName.split(/[-_ ]+/);
+      if (parts[0] && parts[0].length > 1) {
+        setCompany(parts[0]);
+      }
     }
   };
 
@@ -90,7 +107,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setUploadProgress(0);
       setErrorMessage(null);
 
-      await documentApi.uploadDocument({
+      const uploadedDoc = await documentApi.uploadDocument({
         file,
         company: company.trim(),
         title: title.trim() || undefined,
@@ -112,7 +129,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setCompany("");
       setTitle("");
       setUploadProgress(0);
-      onUploadSuccess();
+      onUploadSuccess?.(uploadedDoc);
       onClose();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {

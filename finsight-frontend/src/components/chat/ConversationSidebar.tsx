@@ -83,7 +83,12 @@ export const ConversationSidebar: React.FC<ConversationSidebarProps> = ({
                       isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-400"
                     }`}
                   />
-                  <span className="truncate">{conv.title || "New Conversation"}</span>
+                  <span className="truncate flex-1">{conv.title || "New Conversation"}</span>
+                  {conv.documentId && (
+                    <span title="Document linked" className="shrink-0 text-[10px] text-blue-400/80">
+                      📄
+                    </span>
+                  )}
                 </div>
 
                 <button

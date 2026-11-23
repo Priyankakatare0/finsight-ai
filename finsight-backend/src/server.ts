@@ -1,6 +1,14 @@
+import dns from "node:dns";
 import mongoose from "mongoose";
 import app from "./app";
 import { env } from "./config/env";
+
+// Ensure reliable SRV DNS resolution for MongoDB Atlas across all environments
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch {
+  // Ignore in restricted environments
+}
 
 const startServer = async () => {
   try {

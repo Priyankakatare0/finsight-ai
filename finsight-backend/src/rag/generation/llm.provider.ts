@@ -3,8 +3,17 @@ import OpenAI from "openai";
 import { env } from "../../config/env";
 import { useGemini } from "../ingestion/embedder";
 
-export const GEMINI_CHAT_MODEL = process.env.GEMINI_CHAT_MODEL || "gemini-3.1-flash-lite";
+export const GEMINI_CHAT_MODEL =
+  process.env.GEMINI_CHAT_MODEL && process.env.GEMINI_CHAT_MODEL !== "gemini-3.1-flash-lite"
+    ? process.env.GEMINI_CHAT_MODEL
+    : "gemini-3.5-flash-lite";
 export const OPENAI_CHAT_MODEL = process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini";
+
+const GEMINI_FALLBACK_MODELS = [
+  GEMINI_CHAT_MODEL,
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
+].filter((v, i, a) => a.indexOf(v) === i);
 
 export interface StreamChatOptions {
   systemPrompt: string;
@@ -29,40 +38,49 @@ async function streamGeminiChat(options: StreamChatOptions): Promise<StreamChatR
   }
 
   const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
-  const model = GEMINI_CHAT_MODEL;
+  let lastError: any;
 
-  const responseStream = await ai.models.generateContentStream({
-    model,
-    contents: [
-      {
-        role: "user",
-        parts: [{ text: options.userPrompt }],
-      },
-    ],
-    config: {
-      systemInstruction: options.systemPrompt,
-      temperature: options.temperature ?? 0.1,
-    },
-  });
+  for (const model of GEMINI_FALLBACK_MODELS) {
+    try {
+      const responseStream = await ai.models.generateContentStream({
+        model,
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: options.userPrompt }],
+          },
+        ],
+        config: {
+          systemInstruction: options.systemPrompt,
+          temperature: options.temperature ?? 0.1,
+        },
+      });
 
-  let fullContent = "";
+      let fullContent = "";
 
-  for await (const chunk of responseStream) {
-    if (options.signal?.aborted) {
-      break;
-    }
-    const token = chunk.text || "";
-    if (token) {
-      fullContent += token;
-      await options.onToken(token);
+      for await (const chunk of responseStream) {
+        if (options.signal?.aborted) {
+          break;
+        }
+        const token = chunk.text || "";
+        if (token) {
+          fullContent += token;
+          await options.onToken(token);
+        }
+      }
+
+      return {
+        content: fullContent,
+        model,
+        provider: "gemini",
+      };
+    } catch (err: any) {
+      console.warn(`[LLMProvider] Gemini model ${model} stream failed:`, err?.message || err);
+      lastError = err;
     }
   }
 
-  return {
-    content: fullContent,
-    model,
-    provider: "gemini",
-  };
+  throw lastError;
 }
 
 /**
@@ -144,26 +162,31 @@ export async function generateSmallCompletion(
   );
 
   if (useGemini && env.GEMINI_API_KEY) {
-    try {
-      const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
-      const apiCall = ai.models.generateContent({
-        model: GEMINI_CHAT_MODEL,
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: userPrompt }],
+    const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+    for (const model of GEMINI_FALLBACK_MODELS) {
+      try {
+        const apiCall = ai.models.generateContent({
+          model,
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: userPrompt }],
+            },
+          ],
+          config: {
+            systemInstruction: systemPrompt,
+            temperature,
           },
-        ],
-        config: {
-          systemInstruction: systemPrompt,
-          temperature,
-        },
-      });
+        });
 
-      const response = await Promise.race([apiCall, timeoutPromise]);
-      return response.text?.trim() || "";
-    } catch (geminiErr: any) {
-      if (!env.OPENAI_API_KEY) throw geminiErr;
+        const response = await Promise.race([apiCall, timeoutPromise]);
+        return response.text?.trim() || "";
+      } catch (geminiErr: any) {
+        console.warn(`[LLMProvider] Gemini model ${model} completion failed:`, geminiErr?.message || geminiErr);
+        if (!env.OPENAI_API_KEY && model === GEMINI_FALLBACK_MODELS[GEMINI_FALLBACK_MODELS.length - 1]) {
+          throw geminiErr;
+        }
+      }
     }
   }
 
